@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { Role } from "../types/interface";
 import { CustomError } from "../utils/CustomError";
+import { Role } from "@prisma/client";
 
 export class RoleMiddleware {
   static authorizeRoles(...allowedRoles: Role[]) {
