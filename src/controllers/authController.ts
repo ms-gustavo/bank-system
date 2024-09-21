@@ -32,7 +32,6 @@ export class AuthController {
   static async login(req: Request, res: Response): Promise<Response> {
     try {
       const { email, password }: LoginUserDTO = req.body;
-
       const token = await AuthService.loginUser({ email, password });
       return res.status(200).json({
         token,

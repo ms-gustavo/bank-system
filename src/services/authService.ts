@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { AuthLoginUserProps, AuthRegisterUserProps } from "../types/interface";
 import { CustomError } from "../utils/CustomError";
+import { EmailService } from "./emailService";
+import axios from "axios";
 
 const prisma = new PrismaClient();
 
@@ -65,6 +67,11 @@ export class AuthService {
       process.env.JWT_SECRET!,
       { expiresIn: "1h" }
     );
+
+    await EmailService.sendLoginEmail({
+      email: user.email,
+      name: user.name,
+    });
 
     return token;
   }

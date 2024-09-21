@@ -14,3 +14,8 @@ export interface AuthLoginUserProps {
   email: string;
   password: string;
 }
+
+export interface SendEmailLoginProps {
+  email: string;
+  name: string;
+}
