@@ -7,13 +7,15 @@ import { LoginUserDTO } from "../dtos/loginUserDTO";
 export class AuthController {
   static async register(req: Request, res: Response): Promise<Response> {
     try {
-      const { name, email, password, role }: RegisterUserDTO = req.body;
+      const { name, email, password, role, balance }: RegisterUserDTO =
+        req.body;
 
       const { newUser, token } = await AuthService.registerUser({
         name,
         email,
         password,
         role,
+        balance,
       });
       return res.status(201).json({
         newUser,

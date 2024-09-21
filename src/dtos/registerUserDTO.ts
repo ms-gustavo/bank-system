@@ -1,11 +1,12 @@
+import { Role } from "@prisma/client";
 import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsString,
   MinLength,
 } from "class-validator";
-import { Role } from "../types/interface";
 
 export class RegisterUserDTO {
   @IsEmail()
@@ -23,6 +24,10 @@ export class RegisterUserDTO {
   })
   @IsNotEmpty({ message: `A função é obrigatória` })
   role!: Role;
+
+  @IsNumber()
+  @IsNotEmpty({ message: `O saldo é obrigatório` })
+  balance!: number;
 
   @IsString()
   @MinLength(6, { message: `A senha deve ter no mínimo 6 caracteres` })

@@ -1,13 +1,11 @@
+import { Role } from "@prisma/client";
+
 export interface AuthRegisterUserProps {
   name: string;
   email: string;
   password: string;
+  balance?: number;
   role: Role;
-}
-export enum Role {
-  CLIENT = "client",
-  MERCHANT = "merchant",
-  SUPPLIER = "supplier",
 }
 
 export interface AuthLoginUserProps {

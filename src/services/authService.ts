@@ -1,12 +1,9 @@
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { AuthLoginUserProps, AuthRegisterUserProps } from "../types/interface";
 import { CustomError } from "../utils/CustomError";
 import { EmailService } from "./emailService";
-import axios from "axios";
-
-const prisma = new PrismaClient();
+import prisma from "../../prisma/prisma";
 
 export class AuthService {
   static async registerUser({
@@ -14,6 +11,7 @@ export class AuthService {
     email,
     password,
     role,
+    balance,
   }: AuthRegisterUserProps) {
     const emailToLowerCase = email.toLowerCase();
     const existingUser = await prisma.user.findUnique({
@@ -30,12 +28,14 @@ export class AuthService {
         email: emailToLowerCase,
         password: hashedPassword,
         role,
+        balance,
       },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
+        balance: true,
       },
     });
     const token = jwt.sign(

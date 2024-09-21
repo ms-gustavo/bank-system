@@ -14,9 +14,28 @@ datasource db {
 }
 
 model User {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
-  email String @unique
-  password String
-  role String
+  id                  String        @id @default(auto()) @map("_id") @db.ObjectId
+  name                String
+  email               String        @unique
+  password            String
+  role                Role
+  balance             Float         @default(100.0) 
+  sentTransactions    Transaction[] @relation("SentTransactions")
+  receivedTransactions Transaction[] @relation("ReceivedTransactions")
+}
+
+model Transaction {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  fromUserId  String   @db.ObjectId
+  toUserId    String   @db.ObjectId
+  amount      Float
+  timestamp   DateTime @default(now())
+  fromUser    User     @relation("SentTransactions", fields: [fromUserId], references: [id])
+  toUser      User     @relation("ReceivedTransactions", fields: [toUserId], references: [id])
+}
+
+enum Role {
+  CLIENT
+  MERCHANT
+  SUPPLIER
 }
