@@ -7,6 +7,7 @@ import {
   MerchantToSupplierTransactionDTO,
 } from "../dtos/transactionDTO";
 import { validateDTO } from "../middlewares/validate.middleware";
+import { RateLimiter } from "../middlewares/rateLimiter.middleware";
 
 const router = Router();
 
@@ -15,6 +16,7 @@ router.post(
   AuthMiddleware.authenticateToken,
   RoleMiddleware.authorizeRoles("CLIENT"),
   validateDTO(ClientToMerchantTransactionDTO),
+  RateLimiter.transferRateLimiter(),
   transactionController.clientTransfer
 );
 
@@ -23,6 +25,7 @@ router.post(
   AuthMiddleware.authenticateToken,
   RoleMiddleware.authorizeRoles("MERCHANT"),
   validateDTO(MerchantToSupplierTransactionDTO),
+  RateLimiter.transferRateLimiter(),
   transactionController.merchantTransfer
 );
 
