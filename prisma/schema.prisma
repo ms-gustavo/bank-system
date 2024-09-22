@@ -57,6 +57,7 @@ model TransactionLog {
 }
 
 enum Role {
+  ADMIN
   CLIENT
   MERCHANT
   SUPPLIER

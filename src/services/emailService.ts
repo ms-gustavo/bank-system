@@ -1,8 +1,5 @@
 import nodemailer from "nodemailer";
-import {
-  SendConfirmationRegisterEmailProps,
-  SendEmailLoginProps,
-} from "../types/interface";
+import { SendEmailLoginProps } from "../types/interface";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -17,12 +14,18 @@ const transporter = nodemailer.createTransport({
 });
 
 export class EmailService {
-  static async sendEmail({ email, subject, text }: SendEmailLoginProps) {
+  static async sendEmail({
+    email,
+    subject,
+    text,
+    attachment,
+  }: SendEmailLoginProps) {
     const mailOptions = {
       from: emailUser,
       to: email,
       subject,
       text,
+      attachments: attachment ? [attachment] : undefined,
     };
 
     try {

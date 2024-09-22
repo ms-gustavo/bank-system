@@ -9,6 +9,12 @@ export interface AuthRegisterUserProps {
   role: Role;
 }
 
+export interface LogTransactionProps {
+  userId: string;
+  page: number;
+  limit: number;
+}
+
 export interface LogFailedTransactionProps {
   fromUserId: string;
   toUserId: string;
@@ -25,6 +31,17 @@ export interface PerformTransactionProps {
 export interface ValidateSufficientBalanceProps {
   user: { balance: number };
   amount: number;
+}
+
+export interface TransactionLogsProps {
+  id: string;
+  transactionId: string | null;
+  fromUserId: string;
+  toUserId: string;
+  amount: number;
+  timestamp: Date;
+  status: string;
+  errorMessage: string | null;
 }
 
 export interface FindAndValidateUserProps {
@@ -47,6 +64,11 @@ export interface SendEmailLoginProps {
   email: string;
   subject: string;
   text: string;
+  attachment?: {
+    filename: string;
+    content: any;
+    contentType: string;
+  };
 }
 
 export interface ClientToMerchantTransferProps {
