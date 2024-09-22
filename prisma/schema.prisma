@@ -24,6 +24,17 @@ model User {
   receivedTransactions Transaction[] @relation("ReceivedTransactions")
 }
 
+model UserTemp {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  email String @unique
+  password String
+  role Role
+  balance Float @default(100.0)
+  confirmId String @unique
+  createdAt DateTime @default(now())
+}
+
 model Transaction {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   fromUserId  String   @db.ObjectId

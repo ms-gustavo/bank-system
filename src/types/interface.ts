@@ -14,9 +14,16 @@ export interface AuthLoginUserProps {
   password: string;
 }
 
+export interface SendConfirmationRegisterEmailProps {
+  email: string;
+  subject: string;
+  text: string;
+}
+
 export interface SendEmailLoginProps {
   email: string;
-  name: string;
+  subject: string;
+  text: string;
 }
 
 export interface TransferProps {

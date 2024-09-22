@@ -1,5 +1,8 @@
 import nodemailer from "nodemailer";
-import { SendEmailLoginProps } from "../types/interface";
+import {
+  SendConfirmationRegisterEmailProps,
+  SendEmailLoginProps,
+} from "../types/interface";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -14,12 +17,12 @@ const transporter = nodemailer.createTransport({
 });
 
 export class EmailService {
-  static async sendLoginEmail({ email, name }: SendEmailLoginProps) {
+  static async sendEmail({ email, subject, text }: SendEmailLoginProps) {
     const mailOptions = {
       from: emailUser,
       to: email,
-      subject: "Notificação de Login",
-      text: `Olá ${name},\n\nUm login foi realizado na sua conta em ${new Date().toLocaleString()}.\n\nSe não foi você, por favor, entre em contato com o suporte imediatamente.\n\nObrigado!`,
+      subject,
+      text,
     };
 
     try {

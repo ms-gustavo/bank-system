@@ -7,6 +7,10 @@ import { RateLimiter } from "../middlewares/rateLimiter.middleware";
 
 const router = Router();
 
+router.get(
+  "/confirm-registration/:confirmId",
+  AuthController.confirmRegistration
+);
 router.post("/register", validateDTO(RegisterUserDTO), AuthController.register);
 router.post(
   "/login",

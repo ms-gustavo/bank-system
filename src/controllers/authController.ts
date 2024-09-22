@@ -10,18 +10,36 @@ export class AuthController {
       const { name, email, password, role, balance }: RegisterUserDTO =
         req.body;
 
-      const { newUser, token } = await AuthService.registerUser({
+      const { message } = await AuthService.registerUser({
         name,
         email,
         password,
         role,
         balance,
       });
-      return res.status(201).json({
-        newUser,
-        token,
-        message: `Usuário criado com sucesso!`,
+      return res.status(200).json({
+        message,
       });
+    } catch (error: unknown) {
+      if (error instanceof CustomError) {
+        return res.status(error.statusCode).json({ message: error.message });
+      }
+      console.error((error as Error).message);
+      return res.status(500).json({ message: `Erro interno no servidor` });
+    }
+  }
+
+  static async confirmRegistration(
+    req: Request,
+    res: Response
+  ): Promise<Response> {
+    const { confirmId } = req.params;
+
+    try {
+      await AuthService.confirmRegistration(confirmId);
+      return res
+        .status(200)
+        .json({ message: `Cadastro confirmado com sucesso!` });
     } catch (error: unknown) {
       if (error instanceof CustomError) {
         return res.status(error.statusCode).json({ message: error.message });

@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
 import { AuthLoginUserProps, AuthRegisterUserProps } from "../types/interface";
 import { CustomError } from "../utils/CustomError";
 import { EmailService } from "./emailService";
@@ -22,13 +23,45 @@ export class AuthService {
       throw new CustomError(`Email já cadastrado`, 400);
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await prisma.user.create({
+    const confirmId = uuidv4();
+    await prisma.userTemp.create({
       data: {
         name,
         email: emailToLowerCase,
         password: hashedPassword,
         role,
         balance,
+        confirmId,
+      },
+    });
+
+    const confirmationLink = `http://localhost:3000/auth/confirm-registration/${confirmId}`;
+
+    await EmailService.sendEmail({
+      email: emailToLowerCase,
+      subject: "Confirme seu cadastro",
+      text: `Olá ${name},\n\nClique no link para confirmar seu cadastro: ${confirmationLink}\n\nObrigado!`,
+    });
+
+    return { message: `Cheque seu email para confirmar o cadastro` };
+  }
+
+  static async confirmRegistration(confirmId: string) {
+    const tempUser = await prisma.userTemp.findUnique({
+      where: { confirmId },
+    });
+
+    if (!tempUser) {
+      throw new CustomError(`Usuário não encontrado`, 400);
+    }
+
+    const newUser = await prisma.user.create({
+      data: {
+        name: tempUser.name,
+        email: tempUser.email,
+        password: tempUser.password,
+        role: tempUser.role,
+        balance: tempUser.balance,
       },
       select: {
         id: true,
@@ -38,12 +71,10 @@ export class AuthService {
         balance: true,
       },
     });
-    const token = jwt.sign(
-      { userId: newUser.id, role: newUser.role },
-      process.env.JWT_SECRET!,
-      { expiresIn: "1h" }
-    );
-    return { newUser, token };
+
+    await prisma.userTemp.delete({
+      where: { confirmId },
+    });
   }
 
   static async loginUser({ email, password }: AuthLoginUserProps) {
@@ -68,9 +99,12 @@ export class AuthService {
       { expiresIn: "1h" }
     );
 
-    await EmailService.sendLoginEmail({
+    await EmailService.sendEmail({
       email: user.email,
-      name: user.name,
+      subject: "Notificação de Login",
+      text: `Olá ${
+        user.name
+      },\n\nUm login foi realizado na sua conta em ${new Date().toLocaleString()}.\n\nSe não foi você, por favor, entre em contato com o suporte imediatamente.\n\nObrigado!`,
     });
 
     return token;
