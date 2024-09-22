@@ -1,10 +1,12 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
 import { AuthLoginUserProps, AuthRegisterUserProps } from "../types/interface";
 import { CustomError } from "../utils/CustomError";
 import { EmailService } from "./emailService";
 import prisma from "../../prisma/prisma";
+dotenv.config();
 
 export class AuthService {
   static async registerUser({
@@ -35,7 +37,8 @@ export class AuthService {
       },
     });
 
-    const confirmationLink = `http://localhost:3000/auth/confirm-registration/${confirmId}`;
+    const confirmationLink = `${process.env
+      .BACKEND_URL!}/auth/confirm-registration/${confirmId}`;
 
     await EmailService.sendEmail({
       email: emailToLowerCase,
