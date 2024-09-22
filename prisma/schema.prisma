@@ -20,7 +20,6 @@ model User {
   password            String
   role                Role
   balance             Float         @default(100.0) 
-  loginConfirmId String?  @unique
   sentTransactions    Transaction[] @relation("SentTransactions")
   receivedTransactions Transaction[] @relation("ReceivedTransactions")
 }
@@ -44,6 +43,17 @@ model Transaction {
   timestamp   DateTime @default(now())
   fromUser    User     @relation("SentTransactions", fields: [fromUserId], references: [id])
   toUser      User     @relation("ReceivedTransactions", fields: [toUserId], references: [id])
+}
+
+model TransactionLog {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  transactionId String @db.ObjectId
+  fromUserId String @db.ObjectId
+  toUserId String @db.ObjectId
+  amount Float
+  timestamp DateTime @default(now())
+  status String
+  errorMessage String?
 }
 
 enum Role {

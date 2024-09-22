@@ -16,140 +16,143 @@ export class AuthService {
     role,
     balance,
   }: AuthRegisterUserProps) {
-    const emailToLowerCase = email.toLowerCase();
-    const existingUser = await prisma.user.findUnique({
-      where: { email: emailToLowerCase },
-    });
+    try {
+      const emailToLowerCase = email.toLowerCase();
+      const existingUser = await prisma.user.findUnique({
+        where: { email: emailToLowerCase },
+      });
 
-    if (existingUser) {
-      throw new CustomError(`Email já cadastrado`, 400);
-    }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const confirmId = uuidv4();
-    await prisma.userTemp.create({
-      data: {
-        name,
+      if (existingUser) {
+        throw new CustomError(`Email já cadastrado`, 400);
+      }
+
+      const existingTempUser = await prisma.userTemp.findUnique({
+        where: { email: emailToLowerCase },
+      });
+
+      if (existingTempUser) {
+        const newConfirmId = uuidv4();
+        await prisma.userTemp.update({
+          where: { email: emailToLowerCase },
+          data: { confirmId: newConfirmId },
+        });
+
+        const newConfirmationLink = `${process.env
+          .BACKEND_URL!}/auth/confirm-registration/${newConfirmId}`;
+
+        await EmailService.sendEmail({
+          email: emailToLowerCase,
+          subject: "Confirme seu cadastro",
+          text: `Olá ${name},\n\nClique no link para confirmar seu cadastro: ${newConfirmationLink}\n\nObrigado!`,
+        });
+
+        return { message: `Cheque seu email para confirmar o cadastro` };
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const confirmId = uuidv4();
+      await prisma.userTemp.create({
+        data: {
+          name,
+          email: emailToLowerCase,
+          password: hashedPassword,
+          role,
+          balance,
+          confirmId,
+        },
+      });
+
+      const confirmationLink = `${process.env
+        .BACKEND_URL!}/auth/confirm-registration/${confirmId}`;
+
+      await EmailService.sendEmail({
         email: emailToLowerCase,
-        password: hashedPassword,
-        role,
-        balance,
-        confirmId,
-      },
-    });
+        subject: "Confirme seu cadastro",
+        text: `Olá ${name},\n\nClique no link para confirmar seu cadastro: ${confirmationLink}\n\nObrigado!`,
+      });
 
-    const confirmationLink = `${process.env
-      .BACKEND_URL!}/auth/confirm-registration/${confirmId}`;
-
-    await EmailService.sendEmail({
-      email: emailToLowerCase,
-      subject: "Confirme seu cadastro",
-      text: `Olá ${name},\n\nClique no link para confirmar seu cadastro: ${confirmationLink}\n\nObrigado!`,
-    });
-
-    return { message: `Cheque seu email para confirmar o cadastro` };
+      return { message: `Cheque seu email para confirmar o cadastro` };
+    } catch (error: unknown) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      console.error((error as Error).message);
+    }
   }
 
   static async confirmRegistration(confirmId: string) {
-    const tempUser = await prisma.userTemp.findUnique({
-      where: { confirmId },
-    });
+    try {
+      const tempUser = await prisma.userTemp.findFirst({
+        where: { confirmId },
+      });
+      if (!tempUser) {
+        throw new CustomError(`Usuário não encontrado`, 400);
+      }
 
-    if (!tempUser) {
-      throw new CustomError(`Usuário não encontrado`, 400);
+      const newUser = await prisma.user.create({
+        data: {
+          name: tempUser.name,
+          email: tempUser.email,
+          password: tempUser.password,
+          role: tempUser.role,
+          balance: tempUser.balance,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          balance: true,
+        },
+      });
+      await prisma.userTemp.delete({
+        where: { confirmId },
+      });
+    } catch (error: unknown) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      console.error((error as Error).message);
     }
-
-    const newUser = await prisma.user.create({
-      data: {
-        name: tempUser.name,
-        email: tempUser.email,
-        password: tempUser.password,
-        role: tempUser.role,
-        balance: tempUser.balance,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        balance: true,
-        loginConfirmId: true,
-      },
-    });
-
-    await prisma.userTemp.delete({
-      where: { confirmId },
-    });
-  }
-
-  static async confirmLoginUser(loginConfirmId: string) {
-    const user = await prisma.user.findUnique({
-      where: { loginConfirmId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        balance: true,
-      },
-    });
-
-    if (!user) {
-      throw new CustomError(`Usuário não encontrado`, 400);
-    }
-
-    const token = jwt.sign(
-      { userId: user.id, role: user.role },
-      process.env.JWT_SECRET!,
-      { expiresIn: "1h" }
-    );
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { loginConfirmId: null },
-    });
-
-    await EmailService.sendEmail({
-      email: user.email,
-      subject: "Notificação de Login",
-      text: `Olá ${
-        user.name
-      },\n\nUm login foi realizado na sua conta em ${new Date().toLocaleString()}.\n\nSe não foi você, por favor, entre em contato com o suporte imediatamente.\n\nObrigado!`,
-    });
-
-    return { user, token };
   }
 
   static async loginUser({ email, password }: AuthLoginUserProps) {
-    const emailToLowerCase = email.toLowerCase();
-    const user = await prisma.user.findUnique({
-      where: { email: emailToLowerCase },
-    });
+    try {
+      const emailToLowerCase = email.toLowerCase();
+      const user = await prisma.user.findUnique({
+        where: { email: emailToLowerCase },
+      });
 
-    if (!user) {
-      throw new CustomError(`Email ou senha incorretos`, 400);
+      if (!user) {
+        throw new CustomError(`Email ou senha incorretos`, 400);
+      }
+
+      const passwordMatch = await bcrypt.compare(password, user.password);
+
+      if (!passwordMatch) {
+        throw new CustomError(`Email ou senha incorretos`, 400);
+      }
+
+      const token = jwt.sign(
+        { userId: user.id, role: user.role },
+        process.env.JWT_SECRET!,
+        { expiresIn: "1h" }
+      );
+
+      await EmailService.sendEmail({
+        email: user.email,
+        subject: "Notificação de Login",
+        text: `Olá ${
+          user.name
+        },\n\nUm login foi realizado na sua conta em ${new Date().toLocaleString()}.\n\nSe não foi você, por favor, entre em contato com o suporte imediatamente.\n\nObrigado!`,
+      });
+
+      return { user, token };
+    } catch (error: unknown) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      console.error((error as Error).message);
     }
-
-    const passwordMatch = await bcrypt.compare(password, user.password);
-
-    if (!passwordMatch) {
-      throw new CustomError(`Email ou senha incorretos`, 400);
-    }
-
-    const loginConfirmId = uuidv4();
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { loginConfirmId },
-    });
-
-    const confirmationLink = `${process.env.BACKEND_URL}/auth/confirm-login/${loginConfirmId}`;
-
-    await EmailService.sendEmail({
-      email: user.email,
-      subject: "Tentativa de Login",
-      text: `Olá ${
-        user.name
-      },\n\nUma tentativa de login foi realizada na sua conta em ${new Date().toLocaleString()}.\n\nClique aqui para confirmar o login: ${confirmationLink}\n\nSe não foi você, por favor, entre em contato com o suporte imediatamente.\n\nObrigado!`,
-    });
   }
 }

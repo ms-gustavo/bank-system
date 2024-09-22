@@ -10,13 +10,19 @@ export class AuthController {
       const { name, email, password, role, balance }: RegisterUserDTO =
         req.body;
 
-      const { message } = await AuthService.registerUser({
+      const result = await AuthService.registerUser({
         name,
         email,
         password,
         role,
         balance,
       });
+
+      if (!result) {
+        throw new CustomError("Falha no registro", 400);
+      }
+
+      const { message } = result;
       return res.status(200).json({
         message,
       });
@@ -49,33 +55,18 @@ export class AuthController {
     }
   }
 
-  static async confirmLogin(req: Request, res: Response): Promise<Response> {
-    const { loginConfirmId } = req.params;
-
-    try {
-      const { user, token } = await AuthService.confirmLoginUser(
-        loginConfirmId
-      );
-      return res.status(200).json({
-        user,
-        token,
-        message: `Usuário logado com sucesso!`,
-      });
-    } catch (error: unknown) {
-      if (error instanceof CustomError) {
-        return res.status(error.statusCode).json({ message: error.message });
-      }
-      console.error((error as Error).message);
-      return res.status(500).json({ message: `Erro interno no servidor` });
-    }
-  }
-
   static async login(req: Request, res: Response): Promise<Response> {
     try {
       const { email, password }: LoginUserDTO = req.body;
-      await AuthService.loginUser({ email, password });
+      const result = await AuthService.loginUser({ email, password });
+      if (!result) {
+        throw new CustomError("Falha no login", 400);
+      }
+      const { user, token } = result;
       return res.status(200).json({
-        message: `Por favor, cheque o token enviado para o seu email`,
+        user,
+        token,
+        message: `Login realizado com sucesso`,
       });
     } catch (error: unknown) {
       if (error instanceof CustomError) {
