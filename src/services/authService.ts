@@ -72,12 +72,51 @@ export class AuthService {
         email: true,
         role: true,
         balance: true,
+        loginConfirmId: true,
       },
     });
 
     await prisma.userTemp.delete({
       where: { confirmId },
     });
+  }
+
+  static async confirmLoginUser(loginConfirmId: string) {
+    const user = await prisma.user.findUnique({
+      where: { loginConfirmId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        balance: true,
+      },
+    });
+
+    if (!user) {
+      throw new CustomError(`Usuário não encontrado`, 400);
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET!,
+      { expiresIn: "1h" }
+    );
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { loginConfirmId: null },
+    });
+
+    await EmailService.sendEmail({
+      email: user.email,
+      subject: "Tentativa de Login",
+      text: `Olá ${
+        user.name
+      },\n\nUm login foi realizado na sua conta em ${new Date().toLocaleString()}.\n\nSe não foi você, por favor, entre em contato com o suporte imediatamente.\n\nObrigado!`,
+    });
+
+    return { user, token };
   }
 
   static async loginUser({ email, password }: AuthLoginUserProps) {
@@ -96,20 +135,21 @@ export class AuthService {
       throw new CustomError(`Email ou senha incorretos`, 400);
     }
 
-    const token = jwt.sign(
-      { userId: user.id, role: user.role },
-      process.env.JWT_SECRET!,
-      { expiresIn: "1h" }
-    );
+    const loginConfirmId = uuidv4();
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { loginConfirmId },
+    });
+
+    const confirmationLink = `${process.env.BACKEND_URL}/auth/confirm-login/${loginConfirmId}`;
 
     await EmailService.sendEmail({
       email: user.email,
-      subject: "Notificação de Login",
+      subject: "Tentativa de Login",
       text: `Olá ${
         user.name
-      },\n\nUm login foi realizado na sua conta em ${new Date().toLocaleString()}.\n\nSe não foi você, por favor, entre em contato com o suporte imediatamente.\n\nObrigado!`,
+      },\n\nUma tentativa de login foi realizada na sua conta em ${new Date().toLocaleString()}.\n\nClique aqui para confirmar o login: ${confirmationLink}\n\nSe não foi você, por favor, entre em contato com o suporte imediatamente.\n\nObrigado!`,
     });
-
-    return token;
   }
 }

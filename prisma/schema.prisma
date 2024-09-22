@@ -20,6 +20,7 @@ model User {
   password            String
   role                Role
   balance             Float         @default(100.0) 
+  loginConfirmId String?  @unique
   sentTransactions    Transaction[] @relation("SentTransactions")
   receivedTransactions Transaction[] @relation("ReceivedTransactions")
 }

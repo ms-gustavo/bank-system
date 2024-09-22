@@ -11,6 +11,7 @@ router.get(
   "/confirm-registration/:confirmId",
   AuthController.confirmRegistration
 );
+router.get("/confirm-login/:loginConfirmId", AuthController.confirmLogin);
 router.post("/register", validateDTO(RegisterUserDTO), AuthController.register);
 router.post(
   "/login",
