@@ -13,14 +13,39 @@ class LogsController {
       const { page = 1, limit = 10 } = req.query;
       const userId = req.user!.userId.toString();
 
-      const logs = await logsService.getAllTransactionLogs({
-        userId,
-        page: Number(page),
-        limit: Number(limit),
-      });
+      const { logs, currentPage, totalPages, totalLogs } =
+        await logsService.getAllTransactionLogs({
+          userId,
+          page: Number(page),
+          limit: Number(limit),
+        });
 
-      return res.status(200).json(logs);
-    } catch (error) {
+      return res.status(200).json({ logs, currentPage, totalPages, totalLogs });
+    } catch (error: unknown) {
+      if (error instanceof CustomError) {
+        return res.status(error.statusCode).json({ message: error.message });
+      }
+      console.log((error as Error).message);
+      return res.status(500).json({ message: `Erro interno do servidor` });
+    }
+  }
+
+  public async getTransactionLogsById(
+    req: AuthRequest,
+    res: Response
+  ): Promise<Response> {
+    try {
+      const { page = 1, limit = 10 } = req.query;
+      const userId = req.user!.userId.toString();
+
+      const { logs, currentPage, totalLogs, totalPages } =
+        await logsService.getTransactionLogsByUserId({
+          userId,
+          page: Number(page),
+          limit: Number(limit),
+        });
+      return res.status(200).json({ logs, currentPage, totalLogs, totalPages });
+    } catch (error: unknown) {
       if (error instanceof CustomError) {
         return res.status(error.statusCode).json({ message: error.message });
       }

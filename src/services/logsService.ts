@@ -61,7 +61,7 @@ class LogsService {
       throw new CustomError("Usuário não encontrado", 404);
     }
 
-    if (user.role !== expectedRole) {
+    if (expectedRole && user.role !== expectedRole) {
       throw new CustomError("Usuário não autorizado", 403);
     }
 
@@ -114,6 +114,72 @@ class LogsService {
 
     return {
       logs,
+      currentPage: page,
+      totalPages,
+      totalLogs,
+    };
+  }
+
+  public async getTransactionLogsByUserId({
+    userId,
+    page,
+    limit,
+  }: LogTransactionProps) {
+    const client = await this.findAndValidateUser({
+      userId,
+    });
+
+    if (page < 1 || limit < 1) {
+      throw new CustomError(`Página e limite devem ser maiores que 0`, 400);
+    }
+
+    const skip = (page - 1) * limit;
+
+    const logs = await prisma.transactionLog.findMany({
+      where: {
+        OR: [
+          {
+            fromUserId: userId,
+          },
+          {
+            toUserId: userId,
+          },
+        ],
+      },
+      skip,
+      take: limit,
+      orderBy: {
+        timestamp: "desc",
+      },
+    });
+
+    if (!logs.length) {
+      throw new CustomError("Nenhum log encontrado", 404);
+    }
+
+    const logsAsSender = logs.filter((log) => log.fromUserId === userId);
+    const logsAsRecipient = logs.filter((log) => log.toUserId === userId);
+
+    const totalLogs = await prisma.transactionLog.count({
+      where: {
+        OR: [
+          {
+            fromUserId: userId,
+          },
+          {
+            toUserId: userId,
+          },
+        ],
+      },
+    });
+
+    const totalPages = Math.ceil(totalLogs / limit);
+
+    return {
+      logs: {
+        asSender: logsAsSender,
+        asRecipient: logsAsRecipient,
+      },
       currentPage: page,
       totalPages,
       totalLogs,

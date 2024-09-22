@@ -46,7 +46,7 @@ export interface TransactionLogsProps {
 
 export interface FindAndValidateUserProps {
   userId: string;
-  expectedRole: Role;
+  expectedRole?: Role;
 }
 
 export interface AuthLoginUserProps {

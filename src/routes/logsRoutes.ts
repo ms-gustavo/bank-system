@@ -11,5 +11,11 @@ router.get(
   RoleMiddleware.authorizeRoles("ADMIN"),
   logsController.getAllTransactionLogs
 );
+router.get(
+  "/logs/:userId",
+  AuthMiddleware.authenticateToken,
+  RoleMiddleware.authorizeRoles("CLIENT", "MERCHANT", "SUPPLIER", "ADMIN"),
+  logsController.getTransactionLogsById
+);
 
 export default router;
