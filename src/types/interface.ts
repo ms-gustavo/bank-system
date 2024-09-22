@@ -9,6 +9,29 @@ export interface AuthRegisterUserProps {
   role: Role;
 }
 
+export interface LogFailedTransactionProps {
+  fromUserId: string;
+  toUserId: string;
+  amount: number;
+  error: unknown;
+}
+
+export interface PerformTransactionProps {
+  fromUserId: string;
+  toUserId: string;
+  amount: number;
+}
+
+export interface ValidateSufficientBalanceProps {
+  user: { balance: number };
+  amount: number;
+}
+
+export interface FindAndValidateUserProps {
+  userId: string;
+  expectedRole: Role;
+}
+
 export interface AuthLoginUserProps {
   email: string;
   password: string;
@@ -26,10 +49,23 @@ export interface SendEmailLoginProps {
   text: string;
 }
 
-export interface TransferProps {
+export interface ClientToMerchantTransferProps {
   clientId: string;
   merchantId: string;
   amount: number;
+  password: string;
+}
+
+export interface CheckPasswordProps {
+  password: string;
+  userId: string;
+}
+
+export interface MerchantToSupplierProps {
+  merchantId: string;
+  supplierId: string;
+  amount: number;
+  password: string;
 }
 
 export interface AuthRequest extends Request {

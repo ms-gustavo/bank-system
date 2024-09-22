@@ -47,7 +47,7 @@ model Transaction {
 
 model TransactionLog {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  transactionId String @db.ObjectId
+  transactionId String? @db.ObjectId
   fromUserId String @db.ObjectId
   toUserId String @db.ObjectId
   amount Float
