@@ -110,7 +110,7 @@ export class AuthService {
 
     await EmailService.sendEmail({
       email: user.email,
-      subject: "Tentativa de Login",
+      subject: "Notificação de Login",
       text: `Olá ${
         user.name
       },\n\nUm login foi realizado na sua conta em ${new Date().toLocaleString()}.\n\nSe não foi você, por favor, entre em contato com o suporte imediatamente.\n\nObrigado!`,
