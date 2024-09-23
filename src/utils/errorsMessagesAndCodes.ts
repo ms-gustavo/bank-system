@@ -1,4 +1,8 @@
 export const errorsMessagesAndCodes = {
+  emailAlreadyRegistered: {
+    message: "Email já cadastrado",
+    code: 400,
+  },
   userNotFound: {
     message: "Usuário não encontrado",
     code: 404,

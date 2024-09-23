@@ -61,6 +61,8 @@ export interface SendConfirmationRegisterEmailProps {
 }
 
 export interface EmailServiceMessagesProps {
+  name?: string;
+  newConfirmationLink?: string;
   fromUser?: string;
   amount?: number;
   toUser?: string;
