@@ -3,6 +3,7 @@ import { LogsDTO } from "../dtos/logsDTO";
 import logsService from "../services/logsService";
 import { AuthRequest } from "../types/interface";
 import { CustomError } from "../utils/CustomError";
+import { errorsMessagesAndCodes } from "../utils/errorsMessagesAndCodes";
 
 class LogsController {
   public async getAllTransactionLogs(
@@ -26,7 +27,9 @@ class LogsController {
         return res.status(error.statusCode).json({ message: error.message });
       }
       console.log((error as Error).message);
-      return res.status(500).json({ message: `Erro interno do servidor` });
+      return res
+        .status(errorsMessagesAndCodes.internalServerError.code)
+        .json({ message: errorsMessagesAndCodes.internalServerError.message });
     }
   }
 
@@ -50,7 +53,9 @@ class LogsController {
         return res.status(error.statusCode).json({ message: error.message });
       }
       console.log((error as Error).message);
-      return res.status(500).json({ message: `Erro interno do servidor` });
+      return res
+        .status(errorsMessagesAndCodes.internalServerError.code)
+        .json({ message: errorsMessagesAndCodes.internalServerError.message });
     }
   }
 }

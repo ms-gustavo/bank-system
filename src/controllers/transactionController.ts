@@ -6,6 +6,8 @@ import {
 } from "../dtos/transactionDTO";
 import transactionService from "../services/transactionService";
 import { CustomError } from "../utils/CustomError";
+import { errorsMessagesAndCodes } from "../utils/errorsMessagesAndCodes";
+import { successMessagesAndCodes } from "../utils/successMessagesAndCodes";
 
 class TransactionController {
   public async clientTransfer(
@@ -22,16 +24,18 @@ class TransactionController {
         amount,
         password,
       });
-      return res.status(200).json({
+      return res.status(successMessagesAndCodes.successTransaction.code).json({
         transaction,
-        message: `Transação realizada com sucesso`,
+        message: successMessagesAndCodes.successTransaction.message,
       });
     } catch (error: unknown) {
       if (error instanceof CustomError) {
         return res.status(error.statusCode).json({ message: error.message });
       }
       console.log((error as Error).message);
-      return res.status(500).json({ message: `Erro interno do servidor` });
+      return res
+        .status(errorsMessagesAndCodes.internalServerError.code)
+        .json({ message: errorsMessagesAndCodes.internalServerError.message });
     }
   }
 
@@ -49,16 +53,18 @@ class TransactionController {
         amount,
         password,
       });
-      return res.status(200).json({
+      return res.status(successMessagesAndCodes.successTransaction.code).json({
         transaction,
-        message: `Transação realizada com sucesso`,
+        message: successMessagesAndCodes.successTransaction.message,
       });
     } catch (error: unknown) {
       if (error instanceof CustomError) {
         return res.status(error.statusCode).json({ message: error.message });
       }
       console.log((error as Error).message);
-      return res.status(500).json({ message: `Erro interno do servidor` });
+      return res
+        .status(errorsMessagesAndCodes.internalServerError.code)
+        .json({ message: errorsMessagesAndCodes.internalServerError.message });
     }
   }
 }
