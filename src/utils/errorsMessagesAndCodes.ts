@@ -35,4 +35,16 @@ export const errorsMessagesAndCodes = {
     message: "Nenhum log encontrado",
     code: 404,
   },
+  registerFailed: {
+    message: "Falha no registro",
+    code: 400,
+  },
+  internalServerError: {
+    message: "Erro interno no servidor",
+    code: 500,
+  },
+  loginFailed: {
+    message: "Falha no login",
+    code: 400,
+  },
 };
