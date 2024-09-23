@@ -19,4 +19,8 @@ export const errorsMessagesAndCodes = {
     message: "Email ou senha incorretos",
     code: 400,
   },
+  emailNotSent: {
+    message: "Erro ao enviar email",
+    code: 500,
+  },
 };

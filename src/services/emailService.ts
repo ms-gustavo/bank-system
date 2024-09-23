@@ -1,5 +1,7 @@
 import nodemailer from "nodemailer";
 import { SendEmailLoginProps } from "../types/interface";
+import { CustomError } from "../utils/CustomError";
+import { errorsMessagesAndCodes } from "../utils/errorsMessagesAndCodes";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -30,10 +32,13 @@ export class EmailService {
 
     try {
       await transporter.sendMail(mailOptions);
-      console.log(`Email enviado para ${email}`);
     } catch (error: unknown) {
       console.error(
         `Erro ao enviar email para ${email}: ${(error as Error).message}`
+      );
+      throw new CustomError(
+        errorsMessagesAndCodes.emailNotSent.message,
+        errorsMessagesAndCodes.emailNotSent.code
       );
     }
   }
