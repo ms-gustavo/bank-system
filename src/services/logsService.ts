@@ -8,6 +8,9 @@ import {
 } from "../types/interface";
 import { CustomError } from "../utils/CustomError";
 import { EmailService } from "./emailService";
+import { errorsMessagesAndCodes } from "../utils/errorsMessagesAndCodes";
+import { Role } from "@prisma/client";
+import { logsEmailNotification } from "../utils/emailServiceMessages";
 
 class LogsService {
   private async genereateLogsPDF(
@@ -58,14 +61,33 @@ class LogsService {
     });
 
     if (!user) {
-      throw new CustomError("Usuário não encontrado", 404);
+      throw new CustomError(
+        errorsMessagesAndCodes.userNotFound.message,
+        errorsMessagesAndCodes.userNotFound.code
+      );
     }
 
     if (expectedRole && user.role !== expectedRole) {
-      throw new CustomError("Usuário não autorizado", 403);
+      throw new CustomError(
+        errorsMessagesAndCodes.userNotAuthorized.message,
+        errorsMessagesAndCodes.userNotAuthorized.code
+      );
     }
 
     return user;
+  }
+
+  private async checkPageAndLimit(page: number, limit: number) {
+    if (page < 1 || limit < 1) {
+      throw new CustomError(
+        errorsMessagesAndCodes.pageOrLimitInvalid.message,
+        errorsMessagesAndCodes.pageOrLimitInvalid.code
+      );
+    }
+
+    const firstPage = 1;
+    const skip = (page - firstPage) * limit;
+    return skip;
   }
 
   public async getAllTransactionLogs({
@@ -75,14 +97,10 @@ class LogsService {
   }: LogTransactionProps) {
     const client = await this.findAndValidateUser({
       userId,
-      expectedRole: "ADMIN",
+      expectedRole: Role.ADMIN,
     });
 
-    if (page < 1 || limit < 1) {
-      throw new CustomError(`Página e limite devem ser maiores que 0`, 400);
-    }
-
-    const skip = (page - 1) * limit;
+    const skip = await this.checkPageAndLimit(page, limit);
 
     const logs = await prisma.transactionLog.findMany({
       skip,
@@ -93,7 +111,10 @@ class LogsService {
     });
 
     if (!logs.length) {
-      throw new CustomError("Nenhum log encontrado", 404);
+      throw new CustomError(
+        errorsMessagesAndCodes.logsNotFound.message,
+        errorsMessagesAndCodes.logsNotFound.code
+      );
     }
 
     const totalLogs = await prisma.transactionLog.count();
@@ -101,16 +122,21 @@ class LogsService {
 
     const pdfBuffer = await this.genereateLogsPDF(logs);
 
-    await EmailService.sendEmail({
-      email: client.email,
-      subject: "Relatório de Logs de Transações",
-      text: "Relatório de Logs de Transações em anexo",
-      attachment: {
-        filename: "logs.pdf",
-        content: pdfBuffer,
-        contentType: "application/pdf",
-      },
+    const emailContent = logsEmailNotification({
+      attachment: { content: pdfBuffer },
     });
+
+    emailContent &&
+      (await EmailService.sendEmail({
+        email: client.email,
+        subject: emailContent.subject,
+        text: emailContent.text,
+        attachment: {
+          filename: emailContent.attachment.filename,
+          content: emailContent.attachment.content,
+          contentType: emailContent.attachment.contentType,
+        },
+      }));
 
     return {
       logs,
@@ -125,15 +151,11 @@ class LogsService {
     page,
     limit,
   }: LogTransactionProps) {
-    const client = await this.findAndValidateUser({
+    await this.findAndValidateUser({
       userId,
     });
 
-    if (page < 1 || limit < 1) {
-      throw new CustomError(`Página e limite devem ser maiores que 0`, 400);
-    }
-
-    const skip = (page - 1) * limit;
+    const skip = await this.checkPageAndLimit(page, limit);
 
     const logs = await prisma.transactionLog.findMany({
       where: {
@@ -154,11 +176,11 @@ class LogsService {
     });
 
     if (!logs.length) {
-      throw new CustomError("Nenhum log encontrado", 404);
+      throw new CustomError(
+        errorsMessagesAndCodes.logsNotFound.message,
+        errorsMessagesAndCodes.logsNotFound.code
+      );
     }
-
-    const logsAsSender = logs.filter((log) => log.fromUserId === userId);
-    const logsAsRecipient = logs.filter((log) => log.toUserId === userId);
 
     const totalLogs = await prisma.transactionLog.count({
       where: {
@@ -175,6 +197,8 @@ class LogsService {
 
     const totalPages = Math.ceil(totalLogs / limit);
 
+    const logsAsSender = logs.filter((log) => log.fromUserId === userId);
+    const logsAsRecipient = logs.filter((log) => log.toUserId === userId);
     return {
       logs: {
         asSender: logsAsSender,

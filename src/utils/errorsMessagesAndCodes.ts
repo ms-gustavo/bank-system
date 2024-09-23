@@ -23,4 +23,12 @@ export const errorsMessagesAndCodes = {
     message: "Erro ao enviar email",
     code: 500,
   },
+  pageOrLimitInvalid: {
+    message: "Página e limite devem ser maiores que 0",
+    code: 400,
+  },
+  logsNotFound: {
+    message: "Nenhum log encontrado",
+    code: 404,
+  },
 };

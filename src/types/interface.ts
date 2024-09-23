@@ -60,13 +60,24 @@ export interface SendConfirmationRegisterEmailProps {
   text: string;
 }
 
+export interface EmailServiceMessagesProps {
+  fromUser?: string;
+  amount?: number;
+  toUser?: string;
+  attachment?: {
+    filename?: string;
+    content: Buffer;
+    contentType?: string;
+  };
+}
+
 export interface SendEmailLoginProps {
   email: string;
   subject: string;
   text: string;
   attachment?: {
     filename: string;
-    content: any;
+    content: Buffer;
     contentType: string;
   };
 }
