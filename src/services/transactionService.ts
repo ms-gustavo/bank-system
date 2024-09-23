@@ -11,6 +11,9 @@ import {
 } from "../types/interface";
 import { CustomError } from "../utils/CustomError";
 import { EmailService } from "./emailService";
+import { errorsMessagesAndCodes } from "../utils/errorsMessagesAndCodes";
+import { transactionEmailNotification } from "../utils/emailServiceMessages";
+import { Role } from "@prisma/client";
 
 class TransactionService {
   private async checkPassword({ userId, password }: CheckPasswordProps) {
@@ -19,13 +22,19 @@ class TransactionService {
     });
 
     if (!user) {
-      throw new CustomError("Usuário não encontrado", 404);
+      throw new CustomError(
+        errorsMessagesAndCodes.userNotFound.message,
+        errorsMessagesAndCodes.userNotFound.code
+      );
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
-      throw new CustomError(`Email ou senha incorretos`, 400);
+      throw new CustomError(
+        errorsMessagesAndCodes.invalidCredentials.message,
+        errorsMessagesAndCodes.invalidCredentials.code
+      );
     }
   }
 
@@ -38,11 +47,17 @@ class TransactionService {
     });
 
     if (!user) {
-      throw new CustomError("Usuário não encontrado", 404);
+      throw new CustomError(
+        errorsMessagesAndCodes.userNotFound.message,
+        errorsMessagesAndCodes.userNotFound.code
+      );
     }
 
     if (user.role !== expectedRole) {
-      throw new CustomError("Usuário não autorizado", 403);
+      throw new CustomError(
+        errorsMessagesAndCodes.userNotAuthorized.message,
+        errorsMessagesAndCodes.userNotAuthorized.code
+      );
     }
 
     return user;
@@ -53,7 +68,10 @@ class TransactionService {
     amount,
   }: ValidateSufficientBalanceProps) {
     if (balance < amount) {
-      throw new CustomError(`Saldo insuficiente`, 400);
+      throw new CustomError(
+        errorsMessagesAndCodes.insufficientBalance.message,
+        errorsMessagesAndCodes.insufficientBalance.code
+      );
     }
   }
 
@@ -122,13 +140,13 @@ class TransactionService {
     password,
   }: ClientToMerchantTransferProps) {
     try {
-      const checkPassword = await this.checkPassword({
+      await this.checkPassword({
         userId: clientId,
         password,
       });
       const client = await this.findAndValidateUser({
         userId: clientId,
-        expectedRole: "CLIENT",
+        expectedRole: Role.CLIENT,
       });
 
       this.validateSufficientBalance({
@@ -138,7 +156,7 @@ class TransactionService {
 
       const merchant = await this.findAndValidateUser({
         userId: merchantId,
-        expectedRole: "MERCHANT",
+        expectedRole: Role.MERCHANT,
       });
 
       const transaction = await this.performTransaction({
@@ -147,14 +165,16 @@ class TransactionService {
         amount,
       });
 
+      const emailContent = transactionEmailNotification({
+        fromUser: client.name,
+        amount,
+        toUser: merchant.name,
+      });
+
       await EmailService.sendEmail({
         email: client.email,
-        subject: "Notificação de Transação",
-        text: `Olá ${
-          client.name
-        },\n\nUma transação de R$${amount} foi realizada em ${new Date().toLocaleString()} para ${
-          merchant.name
-        }.\n\nSe não foi você, por favor, entre em contato com o suporte imediatamente.\n\nObrigado!`,
+        subject: emailContent.subject,
+        text: emailContent.text,
       });
 
       return transaction;
@@ -177,14 +197,14 @@ class TransactionService {
     password,
   }: MerchantToSupplierProps) {
     try {
-      const checkPassword = await this.checkPassword({
+      await this.checkPassword({
         userId: merchantId,
         password,
       });
 
       const merchant = await this.findAndValidateUser({
         userId: merchantId,
-        expectedRole: "MERCHANT",
+        expectedRole: Role.MERCHANT,
       });
 
       this.validateSufficientBalance({
@@ -194,7 +214,7 @@ class TransactionService {
 
       const supplier = await this.findAndValidateUser({
         userId: supplierId,
-        expectedRole: "SUPPLIER",
+        expectedRole: Role.SUPPLIER,
       });
 
       const transaction = await this.performTransaction({
@@ -203,14 +223,16 @@ class TransactionService {
         amount,
       });
 
+      const emailContent = transactionEmailNotification({
+        fromUser: merchant.name,
+        amount,
+        toUser: supplier.name,
+      });
+
       await EmailService.sendEmail({
         email: merchant.email,
-        subject: "Notificação de Transação",
-        text: `Olá ${
-          merchant.name
-        },\n\nUma transação de ${amount} foi realizada em ${new Date().toLocaleString()} para ${
-          supplier.name
-        }.\n\nSe não foi você, por favor, entre em contato com o suporte imediatamente.\n\nObrigado!`,
+        subject: emailContent.subject,
+        text: emailContent.text,
       });
 
       return transaction;
