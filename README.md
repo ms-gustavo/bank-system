@@ -89,9 +89,6 @@
   <ul>
     <li>Documentação.</li>
     <li>Teste automatizados.</li>
-    <li>Implementação de transações entre diferentes moedas.</li>
-    <li>Melhorias na performance do sistema com caching.</li>
-    <li>Suporte para múltiplos provedores de email.</li>
   </ul>
 
   <h2>🤝 Contribuições</h2>
